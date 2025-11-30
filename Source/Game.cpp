@@ -15,7 +15,7 @@ Game::Game()
       swingAngle(0.0f), swingSpeed(2.0f), swingRadius(0.4f),
       fallSpeed(1.2f), buildingSwayAngle(0.0f), buildingSwaySpeed(0.0f),
       buildingSwayAmplitude(0.0f), score(0), cameraY(0.0f), targetCameraY(0.0f),
-      aspectRatio(1.0f), groundTexture(0), ropeTexture(0), blockTexture(0)  // ✅ Dodaj blockTexture
+      aspectRatio(1.0f), groundTexture(0), ropeTexture(0), blockTexture(0), backgroundTexture(0)  // ✅ Dodaj backgroundTexture
 {
     srand(static_cast<unsigned int>(time(nullptr)));
     
@@ -36,6 +36,8 @@ Game::~Game() {
     glDeleteBuffers(1, &ropeVBO);        // ✅ Oslobodi rope VBO
     glDeleteVertexArrays(1, &blockVAO);  // ✅ Oslobodi block VAO
     glDeleteBuffers(1, &blockVBO);        // ✅ Oslobodi block VBO
+    glDeleteVertexArrays(1, &backgroundVAO);  // ✅ Oslobodi background VAO
+    glDeleteBuffers(1, &backgroundVBO);        // ✅ Oslobodi background VBO
     glDeleteProgram(shaderProgram);
 }
 
@@ -130,6 +132,10 @@ void Game::preprocessTexture(unsigned int& texture, const char* filepath) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     } else if (path.find("block") != std::string::npos) {
         // BLOKOVI - clamp obe ose (1x tekstura po bloku)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    } else if (path.find("background") != std::string::npos) {
+        // POZADINA - clamp obe ose (1x po ekranu)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     } else {
@@ -236,13 +242,44 @@ void Game::initOpenGL() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     
+    // ✅ BACKGROUND VAO - puna pokrivka ekrana (fiksna pozadina)
+    float backgroundVertices[] = {
+        // Pozicija (pokriva ceo ekran)  UV koordinate
+        // X      Y       U       V
+        -10.0f, -10.0f,  0.0f,   0.0f,   // Donji levi
+         10.0f, -10.0f,  1.0f,   0.0f,   // Donji desni
+         10.0f,  10.0f,  1.0f,   1.0f,   // Gornji desni
+        -10.0f, -10.0f,  0.0f,   0.0f,   // Donji levi
+         10.0f,  10.0f,  1.0f,   1.0f,   // Gornji desni
+        -10.0f,  10.0f,  0.0f,   1.0f    // Gornji levi
+    };
+    
+    glGenVertexArrays(1, &backgroundVAO);
+    glGenBuffers(1, &backgroundVBO);
+    
+    glBindVertexArray(backgroundVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, backgroundVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(backgroundVertices), backgroundVertices, GL_STATIC_DRAW);
+    
+    // Atribut 0 (pozicija)
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    
+    // Atribut 1 (UV koordinate)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    
     // Ucitaj shader
     shaderProgram = createShader("Shaders/basic.vert", "Shaders/basic.frag");
     
     // Učitaj teksture
+    preprocessTexture(backgroundTexture, "Textures/background4.jpg");  // ✅ Učitaj PRVO (iza svega)
     preprocessTexture(groundTexture, "Textures/pixel-ground.png");
     preprocessTexture(ropeTexture, "Textures/rope.png");
-    preprocessTexture(blockTexture, "Textures/block2.png");  // ✅ Učitaj block2.png
+    preprocessTexture(blockTexture, "Textures/block2.png");
 }
 
 float Game::getRandomColor() {
@@ -622,6 +659,39 @@ void Game::render() {
     GLuint modelLoc = glGetUniformLocation(shaderProgram, "uModel");
     GLuint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
     GLuint useTexLoc = glGetUniformLocation(shaderProgram, "uUseTexture");
+    
+    // ========================================
+    // ✅ CRTAJ POZADINU PRVO (iza svega)
+    // ========================================
+    if (backgroundTexture != 0) {
+        // ✅ Model matrica za pozadinu - VEOMA MALA VREDNOST
+        // Za 16:9 ekran (aspectRatio = 1.778), koristi 0.1x
+        float bgScaleX = aspectRatio * 0.1f;  // ✅ Horizontalno - 0.1x
+        float bgScaleY = 0.1f;                 // ✅ Vertikalno - 0.1x
+        
+        float backgroundModel[16] = {
+            bgScaleX, 0.0f, 0.0f, 0.0f,  // ✅ Skaliranje horizontalno
+            0.0f, bgScaleY, 0.0f, 0.0f,  // ✅ Skaliranje vertikalno
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f       // Bez translacije - fiksna pozadina
+        };
+        
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, backgroundModel);
+        
+        // Aktiviraj pozadinsku teksturu
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+        
+        GLuint texLoc = glGetUniformLocation(shaderProgram, "uTexture");
+        glUniform1i(texLoc, 0);
+        
+        glUniform1i(useTexLoc, 1);  // Koristi teksturu
+        glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);  // Bela (bez tinta)
+        
+        glBindVertexArray(backgroundVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+    }
     
     // ========================================
     // CRTAJ ZEMLJU SA TEKSTUROM - KAO NA VEžBAMA
