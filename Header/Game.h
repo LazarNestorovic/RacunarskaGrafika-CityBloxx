@@ -14,6 +14,7 @@ private:
     // OpenGL objekti
     unsigned int VAO, VBO;
     unsigned int ropeVAO, ropeVBO;  // Poseban VAO za konopac
+    unsigned int blockVAO, blockVBO;  // ✅ Poseban VAO za blokove
     unsigned int shaderProgram;
     
     // Stanje igre
@@ -43,7 +44,8 @@ private:
     
     // Teksture
     unsigned int groundTexture;       // Tekstura zemlje
-    unsigned int ropeTexture;
+    unsigned int ropeTexture;         // Tekstura konopca
+    unsigned int blockTexture;        // ✅ Tekstura blokova (block2.png)
 
     // Score
     int score;

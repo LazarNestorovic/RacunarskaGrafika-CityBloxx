@@ -15,7 +15,7 @@ Game::Game()
       swingAngle(0.0f), swingSpeed(2.0f), swingRadius(0.4f),
       fallSpeed(1.2f), buildingSwayAngle(0.0f), buildingSwaySpeed(0.0f),
       buildingSwayAmplitude(0.0f), score(0), cameraY(0.0f), targetCameraY(0.0f),
-      aspectRatio(1.0f), groundTexture(0), ropeTexture(0)  // Inicijalno kvadratni ekran
+      aspectRatio(1.0f), groundTexture(0), ropeTexture(0), blockTexture(0)  // ✅ Dodaj blockTexture
 {
     srand(static_cast<unsigned int>(time(nullptr)));
     
@@ -34,6 +34,8 @@ Game::~Game() {
     glDeleteBuffers(1, &VBO);
     glDeleteVertexArrays(1, &ropeVAO);  // ✅ Oslobodi rope VAO
     glDeleteBuffers(1, &ropeVBO);        // ✅ Oslobodi rope VBO
+    glDeleteVertexArrays(1, &blockVAO);  // ✅ Oslobodi block VAO
+    glDeleteBuffers(1, &blockVBO);        // ✅ Oslobodi block VBO
     glDeleteProgram(shaderProgram);
 }
 
@@ -124,12 +126,16 @@ void Game::preprocessTexture(unsigned int& texture, const char* filepath) {
     std::string path(filepath);
     if (path.find("rope") != std::string::npos) {
         // KONOPAC - clamp horizontalno, repeat VERTIKALNO
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // Širina (ne ponavlja)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);         // Dužina (ponavlja VERTIKALNO)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    } else if (path.find("block") != std::string::npos) {
+        // BLOKOVI - clamp obe ose (1x tekstura po bloku)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     } else {
         // ZEMLJA - repeat horizontalno, clamp vertikalno
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);         // Ponavljanje horizontalno
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  // Razvlačenje vertikalno
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
     
     // Filter strategije (linear za glatko skaliranje)
@@ -200,12 +206,43 @@ void Game::initOpenGL() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     
+    // ✅ BLOCK VAO - za blokove sa 1x1 teksturom
+    float blockVertices[] = {
+        // Pozicija      UV koordinate
+        // X      Y       U       V
+        -0.5f, -0.5f,   0.0f,   0.0f,   // Donji levi
+         0.5f, -0.5f,   1.0f,   0.0f,   // Donji desni
+         0.5f,  0.5f,   1.0f,   1.0f,   // Gornji desni
+        -0.5f, -0.5f,   0.0f,   0.0f,   // Donji levi
+         0.5f,  0.5f,   1.0f,   1.0f,   // Gornji desni
+        -0.5f,  0.5f,   0.0f,   1.0f    // Gornji levi
+    };
+    
+    glGenVertexArrays(1, &blockVAO);
+    glGenBuffers(1, &blockVBO);
+    
+    glBindVertexArray(blockVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, blockVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(blockVertices), blockVertices, GL_STATIC_DRAW);
+    
+    // Atribut 0 (pozicija)
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    
+    // Atribut 1 (UV koordinate)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    
     // Ucitaj shader
     shaderProgram = createShader("Shaders/basic.vert", "Shaders/basic.frag");
     
     // Učitaj teksture
     preprocessTexture(groundTexture, "Textures/pixel-ground.png");
-    preprocessTexture(ropeTexture, "Textures/rope.png");  // ✅ Učitaj rope.png
+    preprocessTexture(ropeTexture, "Textures/rope.png");
+    preprocessTexture(blockTexture, "Textures/block2.png");  // ✅ Učitaj block2.png
 }
 
 float Game::getRandomColor() {
@@ -384,10 +421,6 @@ void Game::drawBlock(const Block& block, float offsetX, float rotation) {
     GLuint projLoc = glGetUniformLocation(shaderProgram, "uProjection");
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, projectionMatrix);
     
-    // Isklju?i teksturu - koristimo BOJU
-    GLuint useTexLoc = glGetUniformLocation(shaderProgram, "uUseTexture");
-    glUniform1i(useTexLoc, 0);
-    
     // Model matrica - koristi se za skaliranje i translaciju
     float cosR = cos(rotation);
     float sinR = sin(rotation);
@@ -402,12 +435,38 @@ void Game::drawBlock(const Block& block, float offsetX, float rotation) {
     GLuint modelLoc = glGetUniformLocation(shaderProgram, "uModel");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, model);
     
-    GLuint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
-    glUniform4f(colorLoc, block.r, block.g, block.b, 1.0f);
-    
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
+    // ✅ Proveri da li je block tekstura učitana
+    if (blockTexture != 0) {
+        // KORISTI TEKSTURU block2.png
+        GLuint useTexLoc = glGetUniformLocation(shaderProgram, "uUseTexture");
+        glUniform1i(useTexLoc, 1);  // Uključi teksturu
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, blockTexture);
+        
+        GLuint texLoc = glGetUniformLocation(shaderProgram, "uTexture");
+        glUniform1i(texLoc, 0);
+        
+        // BEZ BOJENJA - prikaži teksturu kakva jeste
+        GLuint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
+        glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);  // Bela - bez tinta
+        
+        // Koristi blockVAO sa ispravnim UV koordinatama
+        glBindVertexArray(blockVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+    } else {
+        // Fallback na boju ako tekstura nije učitana
+        GLuint useTexLoc = glGetUniformLocation(shaderProgram, "uUseTexture");
+        glUniform1i(useTexLoc, 0);
+        
+        GLuint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
+        glUniform4f(colorLoc, block.r, block.g, block.b, 1.0f);
+        
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+    }
 }
 
 void Game::drawRope(float x1, float y1, float x2, float y2) {
