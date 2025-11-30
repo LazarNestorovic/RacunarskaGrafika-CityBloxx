@@ -13,6 +13,7 @@ class Game {
 private:
     // OpenGL objekti
     unsigned int VAO, VBO;
+    unsigned int ropeVAO, ropeVBO;  // Poseban VAO za konopac
     unsigned int shaderProgram;
     
     // Stanje igre
