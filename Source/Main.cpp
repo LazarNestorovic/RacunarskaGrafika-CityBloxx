@@ -16,6 +16,13 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         }
     }
     
+    // ✅ RESTART NA TASTER R
+    if (key == GLFW_KEY_R && action == GLFW_PRESS) {
+        if (game) {
+            game->restart();
+        }
+    }
+    
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
@@ -56,6 +63,7 @@ int main()
     // Ovo postavlja projection matricu koja ispravlja aspect ratio
     // tako da objekti izgledaju isto na svim rezolucijama
     game->setAspectRatio((float)mode->width, (float)mode->height);
+    game->setWindowSize(mode->width, mode->height);  // ✅ Postavi dimenzije za TextRenderer
     
     double lastTime = glfwGetTime();
 

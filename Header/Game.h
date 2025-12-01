@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "Block.h"
+#include "TextRenderer.h"  // ✅ Dodaj TextRenderer
 
 enum GameState {
     PLAYING,
@@ -13,10 +14,15 @@ class Game {
 private:
     // OpenGL objekti
     unsigned int VAO, VBO;
-    unsigned int ropeVAO, ropeVBO;  // Poseban VAO za konopac
-    unsigned int blockVAO, blockVBO;  // Poseban VAO za blokove
-    unsigned int backgroundVAO, backgroundVBO;  // ✅ VAO za pozadinu
+    unsigned int ropeVAO, ropeVBO;
+    unsigned int blockVAO, blockVBO;
+    unsigned int backgroundVAO, backgroundVBO;
     unsigned int shaderProgram;
+    unsigned int textShaderProgram;  // ✅ Text shader
+    
+    // ✅ Text Renderer
+    TextRenderer* textRenderer;
+    int windowWidth, windowHeight;
     
     // Stanje igre
     GameState state;
@@ -67,6 +73,7 @@ private:
     const float CAMERA_SPEED = 3.0f;   // Brzina praćenja kamere (smooth interpolacija)
     
     void initOpenGL();
+    void initTextRenderer();  // ✅ Nova funkcija
     void preprocessTexture(unsigned int& texture, const char* filepath);
     void spawnNewBlock();
     void updateCamera(float deltaTime);
@@ -81,10 +88,12 @@ public:
     ~Game();
     
     void setAspectRatio(float width, float height);
+    void setWindowSize(int width, int height);  // ✅ Nova funkcija
     
     void update(float deltaTime);
     void render();
     void dropBlock();
+    void restart();  // ✅ Nova funkcija za restart igre
     
     bool isGameOver() const { return state == GAME_OVER; }
     int getScore() const { return score; }

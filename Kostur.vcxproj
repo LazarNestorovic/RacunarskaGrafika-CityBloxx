@@ -102,11 +102,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\freetype.2.8.0.1\build\native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freetype28d.lib;opengl32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\lazar\OneDrive\Desktop\4-zimski\RacunarskaGrafika\Kostur\packages\freetype.2.8.0.1\build\native\lib\x64\v141\static\Debug%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -121,18 +123,22 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>freetype28.lib;opengl32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\lazar\OneDrive\Desktop\4-zimski\RacunarskaGrafika\Kostur\packages\freetype.2.8.0.1\build\native\lib\x64\v141\static\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Block.cpp" />
     <ClCompile Include="Source\Game.cpp" />
     <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\TextRenderer.cpp" />
     <ClCompile Include="Source\Util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Header\Block.h" />
     <ClInclude Include="Header\Game.h" />
     <ClInclude Include="Header\stb_image.h" />
+    <ClInclude Include="Header\TextRenderer.h" />
     <ClInclude Include="Header\Util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -148,6 +154,8 @@
   <ImportGroup Label="ExtensionTargets">
     <Import Project="packages\glfw.3.4.0\build\native\glfw.targets" Condition="Exists('packages\glfw.3.4.0\build\native\glfw.targets')" />
     <Import Project="packages\glew-2.2.0.2.2.0.1\build\native\glew-2.2.0.targets" Condition="Exists('packages\glew-2.2.0.2.2.0.1\build\native\glew-2.2.0.targets')" />
+    <Import Project="packages\freetype.redist.2.8.0.1\build\native\freetype.redist.targets" Condition="Exists('packages\freetype.redist.2.8.0.1\build\native\freetype.redist.targets')" />
+    <Import Project="packages\freetype.2.8.0.1\build\native\freetype.targets" Condition="Exists('packages\freetype.2.8.0.1\build\native\freetype.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -155,5 +163,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('packages\glfw.3.4.0\build\native\glfw.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\glfw.3.4.0\build\native\glfw.targets'))" />
     <Error Condition="!Exists('packages\glew-2.2.0.2.2.0.1\build\native\glew-2.2.0.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\glew-2.2.0.2.2.0.1\build\native\glew-2.2.0.targets'))" />
+    <Error Condition="!Exists('packages\freetype.redist.2.8.0.1\build\native\freetype.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\freetype.redist.2.8.0.1\build\native\freetype.redist.targets'))" />
+    <Error Condition="!Exists('packages\freetype.2.8.0.1\build\native\freetype.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\freetype.2.8.0.1\build\native\freetype.targets'))" />
   </Target>
 </Project>
