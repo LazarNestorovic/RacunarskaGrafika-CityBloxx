@@ -1,11 +1,13 @@
-#include "../Header/Game.h"
+Ôªø#include "../Header/Game.h"
 #include "../Header/Util.h"
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <iomanip>
-#include <sstream>  // ? Za std::ostringstream (konverzija int -> string)
+#include <sstream> 
+#include <fstream>
+#include <algorithm>// ? Za std::ostringstream (konverzija int -> string)
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -17,7 +19,7 @@ Game::Game()
       fallSpeed(1.2f), buildingSwayAngle(0.0f), buildingSwaySpeed(0.0f),
       buildingSwayAmplitude(0.0f), score(0), cameraY(0.0f), targetCameraY(0.0f),
       aspectRatio(1.0f), groundTexture(0), ropeTexture(0), blockTexture(0), backgroundTexture(0),
-      textRenderer(nullptr), windowWidth(800), windowHeight(600), textShaderProgram(0)
+      textRenderer(nullptr), windowWidth(1920), windowHeight(1080), textShaderProgram(0)
 {
     srand(static_cast<unsigned int>(time(nullptr)));
     
@@ -46,6 +48,10 @@ Game::~Game() {
     if (textShaderProgram) glDeleteProgram(textShaderProgram);  // ? Oslobodi text shader
 }
 
+GameState Game::getGameState() const {
+    return state;
+}
+
 // ================================================================
 // setAspectRatio - Normalizuje dimenzije za razli?ite ekrane
 // ================================================================
@@ -54,8 +60,8 @@ void Game::setAspectRatio(float width, float height) {
     
     // Kreiramo orthographic projection matricu
     if (aspectRatio > 1.0f) {
-        // äIROKI EKRAN (npr. 16:9)
-        // Proöirujemo horizontalno vidno polje
+        // ≈†IROKI EKRAN (npr. 16:9)
+        // Pro≈°irujemo horizontalno vidno polje
         float left = -aspectRatio;
         float right = aspectRatio;
         float bottom = -1.0f;
@@ -83,7 +89,7 @@ void Game::setAspectRatio(float width, float height) {
         projectionMatrix[15] = 1.0f;
     } else {
         // VISOKI EKRAN (portret mode)
-        // Proöirujemo vertikalno vidno polje
+        // Pro≈°irujemo vertikalno vidno polje
         float left = -1.0f;
         float right = 1.0f;
         float bottom = -1.0f / aspectRatio;
@@ -112,14 +118,14 @@ void Game::setAspectRatio(float width, float height) {
 }
 
 // ================================================================
-// preprocessTexture - Priprema teksturu za koriöcenje (kao na veûbama)
+// preprocessTexture - Priprema teksturu za kori≈°cenje (kao na ve≈æbama)
 // ================================================================
 void Game::preprocessTexture(unsigned int& texture, const char* filepath) {
     texture = loadImageToTexture(filepath);  // Funkcija iz Util.h
     
-    if (texture == 0) {  // Provera greöke
-        std::cout << "GREäKA: Tekstura nije ucitana: " << filepath << std::endl;
-        return;  // Izadi samo ako je greöka
+    if (texture == 0) {  // Provera gre≈°ke
+        std::cout << "GRE≈†KA: Tekstura nije ucitana: " << filepath << std::endl;
+        return;  // Izadi samo ako je gre≈°ka
     }
     
     std::cout << "Tekstura ucitana: " << filepath << ", ID: " << texture << std::endl;
@@ -335,11 +341,11 @@ void Game::spawnNewBlock() {
     // ========================================
     
     float initialX = 0.0f;                  // Centralno ispod kuke
-    float initialY = HOOK_Y - ROPE_LENGTH;  // Na duûini uûeta ispod kuke
+    float initialY = HOOK_Y - ROPE_LENGTH;  // Na du≈æini u≈æeta ispod kuke
     
     currentBlock = new Block(
         initialX,       // x - centar (direktno ispod kuke)
-        initialY,       // y - visi na duûini uûeta
+        initialY,       // y - visi na du≈æini u≈æeta
         BLOCK_WIDTH, 
         BLOCK_HEIGHT, 
         r, g, b
@@ -356,7 +362,7 @@ void Game::updateCamera(float deltaTime) {
         Block& topBlock = placedBlocks.back();
         float buildingTop = topBlock.y + topBlock.height / 2.0f;
         
-        // Konstantna distanca = duûina uûeta + visina bloka + 0.25 (dodatni prostor)
+        // Konstantna distanca = du≈æina u≈æeta + visina bloka + 0.25 (dodatni prostor)
         float desiredDistance = ROPE_LENGTH + BLOCK_HEIGHT + 0.25f;
         
         // Trenutna pozicija ljuljaju?eg bloka (u world space)
@@ -365,10 +371,10 @@ void Game::updateCamera(float deltaTime) {
         // Trenutna distanca izme?u vrha zgrade i pozicije kuke (gde visi blok)
         float currentDistance = currentBlockWorldY - buildingTop;
         
-        // ? USLOV: Pomeri kameru SAMO ako je distanca manja od ûeljene
-        // Ovo spre?ava kretanje kamere dok zgrada joö nije dovoljno visoka
+        // ? USLOV: Pomeri kameru SAMO ako je distanca manja od ≈æeljene
+        // Ovo spre?ava kretanje kamere dok zgrada jo≈° nije dovoljno visoka
         if (currentDistance < desiredDistance) {
-            // Target kamera Y = vrh zgrade + ûelena distanca - HOOK_Y
+            // Target kamera Y = vrh zgrade + ≈æelena distanca - HOOK_Y
             // (HOOK_Y je pozicija kuke na ekranu, mora ostati na 0.9)
             targetCameraY = buildingTop + desiredDistance - HOOK_Y;
         } else {
@@ -396,12 +402,25 @@ void Game::update(float deltaTime) {
     }
     
     if (state == GAME_OVER) {
-        std::cout << "?? update(): GAME_OVER - ne aûuriram logiku" << std::endl;
+        enteringName = true;
+        double now = glfwGetTime();
+        if (now - lastCursorBlink > 0.5) {
+            cursorVisible = !cursorVisible;
+            lastCursorBlink = now;
+        }
         return;
     }
     
-    // Aûuriraj kameru
+    // A≈æuriraj kameru
     updateCamera(deltaTime);
+
+    /*if (state == GAME_OVER) {
+        double now = glfwGetTime();
+        if (now - lastCursorBlink > 0.5) {
+            cursorVisible = !cursorVisible;
+            lastCursorBlink = now;
+        }
+    }*/
     
     if (!blockFalling) {
         // ========================================
@@ -414,7 +433,7 @@ void Game::update(float deltaTime) {
         float angularAcceleration = -(GRAVITY / ROPE_LENGTH) * sin(swingAngle);
         swingSpeed += angularAcceleration * deltaTime;
         
-        // === 2. AéURIRAJ UGAO (bez priguöenja - nema gubitka energije) ===
+        // === 2. A≈ΩURIRAJ UGAO (bez prigu≈°enja - nema gubitka energije) ===
         swingAngle += swingSpeed * deltaTime;
         
         // === 3. OGRANICENIE SA BLAGIM USPORAVANJEM ===
@@ -438,7 +457,7 @@ void Game::update(float deltaTime) {
         // - Blok se stalno ljulja izmedu granica (ne zaustavlja se)
         // - Uspori se blago na krajevima (realisticno)
         // - Ubrzava se ka centru zbog gravitacije (prirodno)
-        // - Energia boost odrûava konstantnu amplitudu ljuljanja
+        // - Energia boost odr≈æava konstantnu amplitudu ljuljanja
         
     } else {
         // Padanje bloka
@@ -447,7 +466,7 @@ void Game::update(float deltaTime) {
         // Provera da li je blok stigao do zemlje
         if (placedBlocks.empty()) {
             if (currentBlock->y - currentBlock->height / 2.0f <= GROUND_Y) {
-                // Prvi blok uvek uspeöno pada na zemlju
+                // Prvi blok uvek uspe≈°no pada na zemlju
                 currentBlock->y = GROUND_Y + currentBlock->height / 2.0f;
                 placedBlocks.push_back(*currentBlock);
                 score++;
@@ -467,20 +486,20 @@ void Game::update(float deltaTime) {
                     float maxOverhang = currentBlock->width * OVERHANG_LIMIT;
                     
                     if (overhang > maxOverhang) {
-                        // Previöe viri - Game Over
+                        // Previ≈°e viri - Game Over
                         std::cout << "\n========================================" << std::endl;
-                        std::cout << "?? GAME OVER - Blok previöe viri!" << std::endl;
+                        std::cout << "?? GAME OVER - Blok previ≈°e viri!" << std::endl;
                         std::cout << "   Overhang: " << overhang << " (Max: " << maxOverhang << ")" << std::endl;
                         std::cout << "   Score: " << score << std::endl;
                         std::cout << "========================================\n" << std::endl;
                         state = GAME_OVER;
                     } else {
-                        // Uspeöno postavljanje
+                        // Uspe≈°no postavljanje
                         placedBlocks.push_back(*currentBlock);
                         score++;
-                        std::cout << "? Blok uspeöno postavljen! Score: " << score << std::endl;
+                        std::cout << "? Blok uspe≈°no postavljen! Score: " << score << std::endl;
                         
-                        // Povecaj nijansanje zgrade proporcionalno greöci
+                        // Povecaj nijansanje zgrade proporcionalno gre≈°ci
                         if (overhang > 0.01f) {
                             float errorRatio = overhang / maxOverhang;
                             buildingSwayAmplitude += errorRatio * 0.05f;
@@ -490,9 +509,9 @@ void Game::update(float deltaTime) {
                         spawnNewBlock();
                     }
                 } else {
-                    // Potpuno promaöaj - Game Over
+                    // Potpuno proma≈°aj - Game Over
                     std::cout << "\n========================================" << std::endl;
-                    std::cout << "?? GAME OVER - Potpuni promaöaj!" << std::endl;
+                    std::cout << "?? GAME OVER - Potpuni proma≈°aj!" << std::endl;
                     std::cout << "   Blokovi se ne preklapaju" << std::endl;
                     std::cout << "   Current block X: " << currentBlock->x << std::endl;
                     std::cout << "   Top block X: " << topBlock.x << std::endl;
@@ -546,7 +565,7 @@ void Game::restart() {
     buildingSwaySpeed = 0.0f;
     buildingSwayAmplitude = 0.0f;
     
-    // Obriöi trenutni blok i spawn novi
+    // Obri≈°i trenutni blok i spawn novi
     if (currentBlock) {
         delete currentBlock;
         currentBlock = nullptr;
@@ -594,7 +613,7 @@ void Game::drawBlock(const Block& block, float offsetX, float rotation) {
         GLuint texLoc = glGetUniformLocation(shaderProgram, "uTexture");
         glUniform1i(texLoc, 0);
         
-        // BEZ BOJENJA - prikaûi teksturu kakva jeste
+        // BEZ BOJENJA - prika≈æi teksturu kakva jeste
         GLuint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
         glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);  // Bela - bez tinta
         
@@ -623,7 +642,7 @@ void Game::drawRope(float x1, float y1, float x2, float y2) {
     GLuint projLoc = glGetUniformLocation(shaderProgram, "uProjection");
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, projectionMatrix);
     
-    // === 1. GEOMETRIJA - Racunanje duûine i ugla ===
+    // === 1. GEOMETRIJA - Racunanje du≈æine i ugla ===
     float dx = x2 - x1;
     float dy = y2 - y1;
     float length = sqrt(dx * dx + dy * dy);
@@ -634,7 +653,7 @@ void Game::drawRope(float x1, float y1, float x2, float y2) {
     // === 3. DIMENZIJE ===
     float ropeWidth = 0.03f;  // Debljina konopca
     
-    // === 4. CENTAR UéETA ===
+    // === 4. CENTAR U≈ΩETA ===
     float centerX = (x1 + x2) / 2.0f;
     float centerY = (y1 + y2) / 2.0f;
     
@@ -759,10 +778,79 @@ void Game::drawText(const char* text, float x, float y, float scale) {
     }
 }
 
+void Game::onKeyPressed(int key) {
+
+    if (state == GAME_OVER) {
+
+        // Ako prvi put kucamo, aktiviraj unos
+        if (!enteringName)
+            enteringName = true;
+
+        // BACKSPACE
+        if (key == GLFW_KEY_BACKSPACE) {
+            if (!playerName.empty()) {
+                playerName.pop_back();
+            }
+            return;
+        }
+
+        // ENTER potvrƒëuje ime
+        if (key == GLFW_KEY_ENTER || key == GLFW_KEY_KP_ENTER) {
+            enteringName = false;
+
+            // OVDJE SNIMI SCORE
+            // saveScore(playerName);
+            if (!playerName.empty()) {
+                std::cout << "Ime sacuvano: " << playerName << std::endl;
+                std::string filename = "PlayersScore.csv";
+                std::ifstream infile(filename);
+                std::vector<std::pair<std::string, int>> scores;
+                bool found = false;
+                if (infile.is_open()) {
+                    std::string line;
+                    while (std::getline(infile, line)) {
+                        std::stringstream ss(line);
+                        std::string name;
+                        int scoreValue;
+                        if (std::getline(ss, name, ',') && ss >> scoreValue) {
+                            if (name == playerName) {
+                                scoreValue = score;
+                                found = true;
+                            } 
+                            scores.push_back({name, scoreValue});
+                        }
+                    }
+                    infile.close(); 
+                }
+
+                if (!found) {
+                    scores.push_back({ playerName, score });
+                }
+
+                std::ofstream outfile(filename, std::ios::trunc);
+                for (const auto& entry : scores) { 
+                    outfile << entry.first << "," << entry.second << "\n";
+                }
+                outfile.close();
+            }
+            return;
+        }
+    }
+}
+
+void Game::onCharEntered(unsigned int codepoint) {
+    if (state == GAME_OVER && enteringName) {
+
+        if (playerName.length() < MAX_NAME_LENGTH) {
+            playerName.push_back((char)codepoint);
+        }
+    }
+}
+
 void Game::render() {
     glUseProgram(shaderProgram);
     
-    // Postavi projection matricu - VAéNO: Ovo se postavlja jednom za celu scenu
+    // Postavi projection matricu - VA≈ΩNO: Ovo se postavlja jednom za celu scenu
     GLuint projLoc = glGetUniformLocation(shaderProgram, "uProjection");
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, projectionMatrix);
     
@@ -804,13 +892,13 @@ void Game::render() {
     }
     
     // ========================================
-    // CRTAJ ZEMLJU SA TEKSTUROM - KAO NA VEûBAMA
+    // CRTAJ ZEMLJU SA TEKSTUROM - KAO NA VE≈æBAMA
     // ========================================
     float groundHeight = GROUND_Y - (-1.0f);
     float groundCenterY = (GROUND_Y + (-1.0f)) / 2.0f;
     
     float groundModel[16] = {
-        100.0f, 0.0f, 0.0f, 0.0f,  // äirina 100.0 (od -50.0 do +50.0)
+        100.0f, 0.0f, 0.0f, 0.0f,  // ≈†irina 100.0 (od -50.0 do +50.0)
         0.0f, groundHeight, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f,
         0.0f, groundCenterY - cameraY, 0.0f, 1.0f
@@ -818,7 +906,7 @@ void Game::render() {
     
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, groundModel);
     
-    // ? AKTIVIRAJ TEKSTURU - KAO NA VEûBAMAN
+    // ? AKTIVIRAJ TEKSTURU - KAO NA VE≈æBAMAN
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, groundTexture);
     
@@ -846,7 +934,7 @@ void Game::render() {
         drawBlock(block, swayOffset);
     }
     
-    // Crtaj trenutni blok sa kukom i uûetom
+    // Crtaj trenutni blok sa kukom i u≈æetom
     if (currentBlock) {
         if (!blockFalling) {
             float hookX = 0.0f;
@@ -944,7 +1032,7 @@ void Game::render() {
         // ? SMANJEN FONT - 0.5f umesto 0.6f
         float fontSize = 0.5f;
         
-        // Izra?unaj öirinu teksta
+        // Izra?unaj ≈°irinu teksta
         float text1Width = textRenderer->getTextWidth(line1, fontSize);
         float text2Width = textRenderer->getTextWidth(line2, fontSize);
         
@@ -952,49 +1040,246 @@ void Game::render() {
         float textX1 = (panelWidth - text1Width) / 2.0f - 200.0f;  // Centriraj pa pomeri 200px ulevo
         float textX2 = (panelWidth - text2Width) / 2.0f - 200.0f;  // Centriraj pa pomeri 200px ulevo
         
-        // ? MALO GORE - pomeri tekst viöe ka vrhu (80px i 110px umesto 120px i 160px)
-        float textY1 = 80.0f;   // Prvi red - 80px od vrha (viöe ka vrhu)
+        // ? MALO GORE - pomeri tekst vi≈°e ka vrhu (80px i 110px umesto 120px i 160px)
+        float textY1 = 80.0f;   // Prvi red - 80px od vrha (vi≈°e ka vrhu)
         float textY2 = 110.0f;  // Drugi red - 110px od vrha (30px ispod prvog)
         
         textRenderer->renderText(line1, textX1, textY1, fontSize, 1.0f, 1.0f, 1.0f);  // Beli tekst
         textRenderer->renderText(line2, textX2, textY2, fontSize, 1.0f, 1.0f, 1.0f);  // Beli tekst
     }
 
+    if (textRenderer) {
+        // ============================================
+        // 1. CRTAJ SIVU POZADINU U DONJEM LEVOM UGLU
+        // ============================================
+        float panelWidth = 500.0f;   // ≈°irina panela
+        float panelHeight = 300.0f;   // visina panela
+        float panelX = 0.0f;     // levi ugao
+        float panelY = 0.0f;     // donji ugao
+
+        
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glUseProgram(shaderProgram);
+
+        // Projection matrica za screen space
+        float screenProjection[16] = {
+            2.0f / windowWidth, 0.0f, 0.0f, 0.0f,
+            0.0f, 2.0f / windowHeight, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f, 1.0f
+        };
+        GLuint projLoc = glGetUniformLocation(shaderProgram, "uProjection");
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, screenProjection);
+
+        // Model matrica za pravougaonik
+        float rectModel[16] = {
+            panelWidth, 0.0f,       0.0f, 0.0f,
+            0.0f,       panelHeight,0.0f, 0.0f,
+            0.0f,       0.0f,       1.0f, 0.0f,
+            panelX,     panelY,     0.0f, 1.0f
+        };
+        GLuint modelLoc = glGetUniformLocation(shaderProgram, "uModel");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, rectModel);
+
+        GLuint useTexLoc = glGetUniformLocation(shaderProgram, "uUseTexture");
+        glUniform1i(useTexLoc, 0);
+
+        GLuint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
+        glUniform4f(colorLoc, 0.3f, 0.3f, 0.3f, 0.8f);  // siva sa 80% opacity
+
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+
+        glDisable(GL_BLEND);
+
+        // Reset projection za game world
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, projectionMatrix);
+
+        // ============================================
+        // 2. CRTAJ TOP 3 SCORE-A
+        // ============================================
+        /*std::vector<std::pair<std::string, int>> topScores = {
+            {"Player3", 700},
+            {"Player2", 850},
+            {"Player1", 1000}
+        };*/
+
+        std::vector<std::pair<std::string, int>> topScores;
+        std::ifstream file("PlayersScore.csv");
+        if (!file.is_open()) {
+            std::cerr << "Ne mogu da otvorim fajl: " << "PlayersScore.csv" << std::endl;
+        }
+
+        std::string line;
+        while (std::getline(file, line)) {
+            std::stringstream ss(line);
+            std::string playerName;
+            std::string scoreStr;
+
+            if (std::getline(ss, playerName, ',') && std::getline(ss, scoreStr)) {
+                int score = std::stoi(scoreStr);
+                topScores.emplace_back(playerName, score);
+            }
+        }
+        file.close();
+
+        // Sortiraj po visini score-a (najveƒái prvi)
+        std::sort(topScores.begin(), topScores.end(),
+            [](const auto& a, const auto& b) { return a.second > b.second; });
+
+        // Uzmi samo top 3
+        if (topScores.size() > 3) {
+            topScores.resize(3);
+        }
+
+        std::pair<std::string, int> temp = topScores[0];
+		topScores[0] = topScores[2];
+		topScores[2] = temp;
+
+        float fontSize = 0.7f;
+        float startX = 20.0f;   // mali offset od leve ivice panela
+        float startY = 20.0f;   // mali offset od donje ivice panela
+        float lineSpacing = 40.0f;   // razmak izmeƒëu redova
+
+        for (int i = 0; i < topScores.size(); ++i) {
+            std::string text = topScores[i].first + " " + std::to_string(topScores[i].second);
+            float y = startY + i * lineSpacing;
+
+            // Boja teksta: zlatna, srebrna, bronzana
+            float r, g, b;
+            if (i == 2) {
+                r = 1.0f; g = 0.84f; b = 0.0f;       // zlato
+            }
+            else if (i == 1) {
+                r = 0.75f; g = 0.75f; b = 0.75f;    // srebro
+            }
+            else {
+                r = 0.8f; g = 0.5f; b = 0.2f;       // bronza
+            }
+
+            textRenderer->renderText(text, startX, windowHeight - y, fontSize, r, g, b);
+        }
+    }
+
+
     // Crtaj score (jednostavan prikaz)
     if (state == GAME_OVER) {
-        std::cout << "?? render(): state == GAME_OVER detektovan!" << std::endl;
+        //std::cout << "?? render(): state == GAME_OVER detektovan!" << std::endl;
         
         // ? GAME OVER sa TextRenderer
         if (textRenderer) {
-            std::cout << "   textRenderer postoji - renderam tekst..." << std::endl;
-            
-            // Centriraj GAME OVER tekst
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            glUseProgram(shaderProgram);
+
+            // Screen space projection
+            float screenProjection[16] = {
+                2.0f / windowWidth, 0.0f, 0.0f, 0.0f,
+                0.0f, -2.0f / windowHeight, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                -1.0f, 1.0f, 0.0f, 1.0f
+            };
+
+            GLuint projLoc = glGetUniformLocation(shaderProgram, "uProjection");
+            glUniformMatrix4fv(projLoc, 1, GL_FALSE, screenProjection);
+
+            // Dimenzije pravougaonika (prilagodi po potrebi)
+            float panelWidth = 800.0f;
+            float panelHeight = 600.0f;
+            float panelX = windowWidth / 2.0f;  // Centriraj horizontalno
+            float panelY = windowHeight / 2.0f;  // Centriraj vertikalno
+
+            // Model matrica za pravougaonik
+            float rectModel[16] = {
+                panelWidth, 0.0f, 0.0f, 0.0f,
+                0.0f, panelHeight, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                panelX, panelY, 0.0f, 1.0f
+            };
+
+            GLuint modelLoc = glGetUniformLocation(shaderProgram, "uModel");
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, rectModel);
+
+            // Iskljuƒçi teksturu
+            GLuint useTexLoc = glGetUniformLocation(shaderProgram, "uUseTexture");
+            glUniform1i(useTexLoc, 0);
+
+            // Siva boja sa 85% opacity (0.2, 0.2, 0.2, 0.85)
+            GLuint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
+            glUniform4f(colorLoc, 0.2f, 0.2f, 0.2f, 0.85f);
+
+            glBindVertexArray(VAO);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindVertexArray(0);
+
+            glDisable(GL_BLEND);
+
+            // Resetuj projection matricu za tekst
+            glUniformMatrix4fv(projLoc, 1, GL_FALSE, projectionMatrix);
+            //std::cout << "   textRenderer postoji - renderam tekst..." << std::endl;
+
+            // Unesi svoje ime
+
             std::string gameOverText = "GAME OVER";
             float textWidth = textRenderer->getTextWidth(gameOverText, 2.0f);
             float centerX = (windowWidth - textWidth) / 2.0f;
             float centerY = windowHeight / 2.0f;
-            
-            std::cout << "   Text width: " << textWidth << std::endl;
-            std::cout << "   Center X: " << centerX << ", Center Y: " << centerY << std::endl;
-            std::cout << "   Window: " << windowWidth << "x" << windowHeight << std::endl;
-            
-            textRenderer->renderText(gameOverText, centerX, centerY, 2.0f, 1.0f, 0.0f, 0.0f);  // Crveni tekst
+
+            textRenderer->renderText(gameOverText, centerX, centerY, 2.0f, 1.0f, 0.0f, 0.0f);
+
+            // Enter your name tekst
+            std::string nameText = "Enter your name to save your score (optional)";
+            float nameTextWidth = textRenderer->getTextWidth(nameText, 0.6f);
+            float nameX = (windowWidth - nameTextWidth) / 2.0f;
+            float nameY = centerY - 200.0f;
+
+            textRenderer->renderText(nameText, nameX, nameY, 0.6f, 1.0f, 0.0f, 0.0f);  // Crveni tekst
+
+            // Prikaz unetog imena
+            if (state == GAME_OVER && enteringName){
+
+                std::string display = playerName;
+                float w = textRenderer->getTextWidth(display, 1.2f);
+                float x = (windowWidth - w) / 2.0f;
+                float y = nameY + 70.0f;
+
+                textRenderer->renderText(display, x, y, 1.2f, 1.0f, 1.0f, 1.0f);
+
+                if (cursorVisible) {
+                    float width = textRenderer->getTextWidth(playerName, 1.2f);  // funkcija koja raƒçuna ≈°irinu teksta
+                    textRenderer->renderText("|", x + width, y, 1.2f, 1.0f, 1.0f, 1.0f);
+                }
+            }
+
+            // ? SCORE
+            std::ostringstream scoreSt;
+            scoreSt << "Your score: " << score;
+            std::string scoreText = scoreSt.str();
+            float scoreWidth = textRenderer->getTextWidth(scoreText, 1.0f);
+            float scoreX = (windowWidth - scoreWidth) / 2.0f;
+            float scoreY = centerY + 80.0f;  // 80px ispod GAME OVER teksta
+
+            textRenderer->renderText(scoreText, scoreX, scoreY, 1.0f, 1.0f, 1.0f, 1.0f);
             
             // ? RESTART INSTRUKCIJE
-            std::string restartText = "Press R to Restart";
+            std::string restartText = "Press CTRL + R to Restart";
             float restartWidth = textRenderer->getTextWidth(restartText, 1.0f);
             float restartX = (windowWidth - restartWidth) / 2.0f;
-            float restartY = centerY + 80.0f;  // 80px ispod GAME OVER teksta
+            float restartY = scoreY + 80.0f;  // 80px ispod SCORE teksta
             
             textRenderer->renderText(restartText, restartX, restartY, 1.0f, 1.0f, 1.0f, 1.0f);  // Beli tekst
             
-            std::cout << "   Tekst renderovan!" << std::endl;
+            //std::cout << "   Tekst renderovan!" << std::endl;
         } else {
             std::cout << "   ? ERROR: textRenderer je nullptr!" << std::endl;
         }
     }
     
-    // Prikaûi score kao niz blokova (svaki blok = 1 poen) - OPCIONALNO, moûe se ukloniti
+    // Prika≈æi score kao niz blokova (svaki blok = 1 poen) - OPCIONALNO, mo≈æe se ukloniti
     for (int i = 0; i < score && i < 20; i++) {
         float model[16] = {
             0.02f, 0.0f, 0.0f, 0.0f,

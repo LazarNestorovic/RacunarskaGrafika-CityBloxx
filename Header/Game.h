@@ -19,6 +19,12 @@ private:
     unsigned int backgroundVAO, backgroundVBO;
     unsigned int shaderProgram;
     unsigned int textShaderProgram;  // ✅ Text shader
+
+    std::string playerName = "";
+    bool cursorVisible = true;
+    double lastCursorBlink = 0.0;
+    bool enteringName = false;
+    const int MAX_NAME_LENGTH = 16;
     
     // ✅ Text Renderer
     TextRenderer* textRenderer;
@@ -87,8 +93,12 @@ public:
     Game();
     ~Game();
     
+    GameState getGameState() const;
     void setAspectRatio(float width, float height);
     void setWindowSize(int width, int height);  // ✅ Nova funkcija
+	void onKeyPressed(int key);
+	void onCharInput(unsigned int codepoint);
+	void onCharEntered(unsigned int codepoint);  // ✅ Nova funkcija
     
     void update(float deltaTime);
     void render();

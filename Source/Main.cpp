@@ -9,6 +9,12 @@
 
 Game* game = nullptr;
 
+void charCallback(GLFWwindow* window, unsigned int codepoint) {
+    if (game) {
+        game->onCharEntered(codepoint);
+    }
+}
+
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if ((key == GLFW_KEY_ENTER || key == GLFW_KEY_KP_ENTER) && action == GLFW_PRESS) {
         if (game) {
@@ -16,8 +22,8 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         }
     }
     
-    // ✅ RESTART NA TASTER R
-    if (key == GLFW_KEY_R && action == GLFW_PRESS) {
+    // ✅ RESTART NA TASTER R + CTRL
+    if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_R && action == GLFW_PRESS) {
         if (game) {
             game->restart();
         }
@@ -25,6 +31,13 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
+    }
+
+    if (game && game->getGameState() == GAME_OVER) {
+        if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+            game->onKeyPressed(key);
+        }
+        return;
     }
 }
 
@@ -51,6 +64,7 @@ int main()
     glViewport(0, 0, mode->width, mode->height);
 
     glfwSetKeyCallback(window, keyCallback);
+    glfwSetCharCallback(window, charCallback);
 
     glClearColor(0.5f, 0.7f, 1.0f, 1.0f);  // Svetlo plava pozadina (nebo)
     
