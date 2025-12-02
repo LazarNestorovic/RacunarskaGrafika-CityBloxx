@@ -955,7 +955,7 @@ void Game::render() {
     // ========================================
     if (textRenderer) {
         // ? KONTROLE - desni gornji ugao
-        std::string controlsText = "ESC - Exit  |  R - Restart  |  ENTER - Drop Block";
+        std::string controlsText = "ESC - Exit  |  R - Restart  |  ENTER or LEFT MOUSE CLICK - Drop Block";
         float controlsWidth = textRenderer->getTextWidth(controlsText, 0.5f);
         float controlsX = windowWidth - controlsWidth - 20.0f;  // 20px margina sa desne strane
         textRenderer->renderText(controlsText, controlsX, 50.0f, 0.5f, 0.9f, 0.9f, 0.9f);  // 50px od vrha

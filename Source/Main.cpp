@@ -41,6 +41,14 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
 }
 
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        if (game) {
+            game->dropBlock();
+        }
+    }
+}
+
 int main()
 {
     glfwInit();
@@ -59,12 +67,19 @@ int main()
 
     if (glewInit() != GLEW_OK) return endProgram("GLEW nije uspeo da se inicijalizuje.");
 
+    GLFWcursor* myCursor = loadImageToCursor("Resources/cursor_mid.png");
+    if (myCursor) {
+		std::cout << "? Kursor ucitan uspešno." << std::endl;
+        glfwSetCursor(window, myCursor);
+    }
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glViewport(0, 0, mode->width, mode->height);
 
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCharCallback(window, charCallback);
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
     glClearColor(0.5f, 0.7f, 1.0f, 1.0f);  // Svetlo plava pozadina (nebo)
     
