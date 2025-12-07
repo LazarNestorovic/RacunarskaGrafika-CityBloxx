@@ -1,6 +1,8 @@
 ﻿#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 #include "../Header/Util.h"
 #include "../Header/Game.h"
@@ -94,16 +96,22 @@ int main()
     game->setAspectRatio((float)mode->width, (float)mode->height);
     game->setWindowSize(mode->width, mode->height);  // ✅ Postavi dimenzije za TextRenderer
     
+    const double TARGET_FPS = 75.0;
+    const double FRAME_TIME = 1.0 / TARGET_FPS;
     double lastTime = glfwGetTime();
+    double frameStartTime = lastTime;
 
     while (!glfwWindowShouldClose(window))
     {
+        frameStartTime = glfwGetTime();
+
         double currentTime = glfwGetTime();
         float deltaTime = static_cast<float>(currentTime - lastTime);
         lastTime = currentTime;
         
         // Ograniči deltaTime da ne bude prevelik (u slučaju pauze ili sporog frame-a)
         if (deltaTime > 0.1f) deltaTime = 0.1f;
+        if (deltaTime < 1e-4f) deltaTime = 1e-4f;
         
         glClear(GL_COLOR_BUFFER_BIT);
         
@@ -113,6 +121,16 @@ int main()
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        double frameEndTime = glfwGetTime();
+        double frameDuration = frameEndTime - frameStartTime;
+
+        if (frameDuration < FRAME_TIME) {
+            double sleepTime = FRAME_TIME - frameDuration;
+            std::this_thread::sleep_for(
+                std::chrono::duration<double>(sleepTime)
+            );
+        }
     }
     
     delete game;
