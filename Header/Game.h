@@ -3,7 +3,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "Block.h"
-#include "TextRenderer.h"  // ✅ Dodaj TextRenderer
+#include "TextRenderer.h" 
 
 enum GameState {
     PLAYING,
@@ -12,13 +12,12 @@ enum GameState {
 
 class Game {
 private:
-    // OpenGL objekti
     unsigned int VAO, VBO;
     unsigned int ropeVAO, ropeVBO;
     unsigned int blockVAO, blockVBO;
     unsigned int backgroundVAO, backgroundVBO;
     unsigned int shaderProgram;
-    unsigned int textShaderProgram;  // ✅ Text shader
+    unsigned int textShaderProgram;  
 
     std::string playerName = "";
     bool cursorVisible = true;
@@ -26,16 +25,13 @@ private:
     bool enteringName = false;
     const int MAX_NAME_LENGTH = 16;
     
-    // ✅ Text Renderer
     TextRenderer* textRenderer;
     int windowWidth, windowHeight;
     
-    // Stanje igre
     GameState state;
     std::vector<Block> placedBlocks;  // Postavljeni blokovi (zgrada)
     Block* currentBlock;              // Trenutni blok koji se ljulja
     
-    // Parametri trenutnog bloka
     bool blockFalling;                // Da li blok pada
     float swingAngle;                 // Ugao ljuljanja
     float swingSpeed;                 // Brzina ljuljanja
@@ -58,8 +54,8 @@ private:
     // Teksture
     unsigned int groundTexture;       // Tekstura zemlje
     unsigned int ropeTexture;         // Tekstura konopca
-    unsigned int blockTexture;        // Tekstura blokova (block2.png)
-    unsigned int backgroundTexture;   // ✅ Tekstura pozadine (background.jpg)
+    unsigned int blockTexture;        // Tekstura blokova
+    unsigned int backgroundTexture;   // Tekstura pozadine
 
     // Score
     int score;
@@ -79,7 +75,7 @@ private:
     const float CAMERA_SPEED = 3.0f;   // Brzina praćenja kamere (smooth interpolacija)
     
     void initOpenGL();
-    void initTextRenderer();  // ✅ Nova funkcija
+    void initTextRenderer();
     void preprocessTexture(unsigned int& texture, const char* filepath);
     void spawnNewBlock();
     void updateCamera(float deltaTime);
@@ -95,15 +91,15 @@ public:
     
     GameState getGameState() const;
     void setAspectRatio(float width, float height);
-    void setWindowSize(int width, int height);  // ✅ Nova funkcija
+    void setWindowSize(int width, int height);
 	void onKeyPressed(int key);
 	void onCharInput(unsigned int codepoint);
-	void onCharEntered(unsigned int codepoint);  // ✅ Nova funkcija
+	void onCharEntered(unsigned int codepoint);
     
     void update(float deltaTime);
     void render();
     void dropBlock();
-    void restart();  // ✅ Nova funkcija za restart igre
+    void restart();
     
     bool isGameOver() const { return state == GAME_OVER; }
     int getScore() const { return score; }
